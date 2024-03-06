@@ -221,4 +221,51 @@ const logout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out"));
 });
 
-export { login, logout, register };
+const updateDetails = asyncHandler(async (req, res) => {
+  const { username, email } = req.body;
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: req.user.id,
+    },
+    data: {
+      username,
+      email,
+    },
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Details Updated Successfully"));
+});
+
+const updateAllDetails = asyncHandler(async (req, res) => {
+  const { username, email } = req.body;
+  let updateFields = { username, email };
+
+  //check if avatar is provided
+  if (req.files?.avatar && req.files.avatar.length > 0) {
+    const avatarLocalPath = req.files?.avatar[0].path;
+    const avatar = await uploadFilesOnCloudinary(avatarLocalPath);
+    updateFields.avatar = avatar?.url || avatar;
+  }
+
+  //check if coverImage is provided
+  if (req.files?.coverImage && req.files.coverImage.length > 0) {
+    const coverImageLocalPath = req.files.coverImage[0].path;
+    const coverImage = await uploadFilesOnCloudinary(coverImageLocalPath);
+    updateFields.coverImage = coverImage?.url || coverImage;
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: req.user.id,
+    },
+    data: updateFields,
+  });
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedUser, "All details updated successfully")
+    );
+});
+
+export { login, logout, register, updateAllDetails, updateDetails };

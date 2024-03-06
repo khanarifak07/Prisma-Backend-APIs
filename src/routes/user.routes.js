@@ -1,5 +1,7 @@
 import { Router } from "express";
 import {
+  changePassword,
+  getAllUsers,
   login,
   logout,
   register,
@@ -29,5 +31,9 @@ router.route("/update-all-details").patch(
   ]),
   updateAllDetails
 );
+
+router.route("/change-password").patch(verifyJWT, changePassword);
+
+router.route("/get-all-users").get(getAllUsers);
 
 export default router;

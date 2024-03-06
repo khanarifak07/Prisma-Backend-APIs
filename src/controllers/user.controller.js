@@ -268,4 +268,74 @@ const updateAllDetails = asyncHandler(async (req, res) => {
     );
 });
 
-export { login, logout, register, updateAllDetails, updateDetails };
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  if (!(newPassword == confirmPassword)) {
+    throw new ApiError(400, "Confirm Password Mismatch");
+  }
+  //get the user
+  const user = await prisma.user.findUnique({
+    where: {
+      id: req.user.id,
+    },
+  });
+  if (!user) {
+    throw new ApiError(400, "You need to login first");
+  }
+  //compare old password
+  const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+  console.log("isPassMatch", isPasswordMatch);
+  if (!isPasswordMatch) {
+    throw new ApiError(400, "Invalid Old Password");
+  }
+  //hash the new password before save
+  const salt = bcrypt.genSaltSync(10);
+  const hashedPassword = bcrypt.hashSync(newPassword, salt);
+  //now update the new password to databse
+  const updatePass = await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatePass, "Password updated successfully"));
+});
+
+const getAllUsers = asyncHandler(async (req, res) => {
+  const allUsers =
+    await prisma.user.findMany(/* {
+    where: {
+      OR: [
+        {
+          username: {
+            startsWith: "A",
+            mode: "insensitive",
+          },
+        },
+        {
+          username: {
+            startsWith: "k",
+            mode:"insensitive"
+          },
+        }
+      ],
+    },
+  } */);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, allUsers, "All users fetched successfully"));
+});
+
+export {
+  changePassword,
+  getAllUsers,
+  login,
+  logout,
+  register,
+  updateAllDetails,
+  updateDetails,
+};
